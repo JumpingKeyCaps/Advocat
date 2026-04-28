@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.lebaillyapp.advocat.prototype.ShredderScreen
 import com.lebaillyapp.advocat.ui.screen.IntroScreen
+import com.lebaillyapp.advocat.ui.screen.ShaderizerScreenBox
+import com.lebaillyapp.advocat.ui.screen.VideoScreenBox
 import com.lebaillyapp.advocat.ui.theme.AdvocatTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,7 +21,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             AdvocatTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    IntroScreen(modifier = Modifier.padding(innerPadding))
+
+                  //  IntroScreen(modifier = Modifier.padding(innerPadding))
+
+                    //  ShaderizerScreenBox(modifier = Modifier.padding(innerPadding))
+
+                   // VideoScreenBox(modifier = Modifier.padding(innerPadding))
+
+                    ShredderScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
