@@ -41,7 +41,7 @@ fun CrtControlPanel(
             .width(320.dp)
             .fillMaxHeight(0.8f), // On limite la hauteur pour ne pas manger tout l'écran
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A).copy(alpha = 0.35f)),
-        elevation = CardDefaults.cardElevation(12.dp)
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column {
             // Header avec bouton fermer
@@ -64,12 +64,12 @@ fun CrtControlPanel(
             ) {
                 item { SectionTitle("PHYSIQUE DU TUBE") }
                 item {
-                    SettingSlider("Fisheye", settings.FISH_EYE_STRENGTH, 0f..2f) {
+                    SettingSlider("Fisheye", settings.FISH_EYE_STRENGTH, -3f..5.0f) {
                         onSettingsChange(settings.copy(FISH_EYE_STRENGTH = it))
                     }
                 }
                 item {
-                    SettingSlider("Zoom", settings.SCREEN_ZOOM, 1f..2.5f) {
+                    SettingSlider("Zoom", settings.SCREEN_ZOOM, -1f..3.5f) {
                         onSettingsChange(settings.copy(SCREEN_ZOOM = it))
                     }
                 }
