@@ -24,21 +24,21 @@ import android.graphics.RuntimeShader
  */
 data class CrtSettings(
     // Physical hardware simulation parameters
-    val FISH_EYE_STRENGTH: Float = 0.90f,
-    val SCREEN_ZOOM: Float = 1.40f,
-    val VIGNETTE_INTENSITY: Float = 0.90f,
-    val GRID_OPACITY: Float = 0.05f,
+    val FISH_EYE_STRENGTH: Float = 2.50f,
+    val SCREEN_ZOOM: Float = 2.017f,
+    val VIGNETTE_INTENSITY: Float = 1.128f,
+    val GRID_OPACITY: Float = 0.001f,
     val GRID_SPACING: Float = 80.0f,
     val SCANLINE_DENSITY: Float = 0.50f,
     val SCANLINE_OPACITY: Float = 0.05f,
 
     // Signal interference and glitch parameters
-    val TEXT_ANAGLYPH: Float = 4.0f,
+    val TEXT_ANAGLYPH: Float = 0.070f,
     val GRID_ANAGLYPH: Float = 6.0f,
-    val SIGNAL_SHIFT: Float = 15.0f,
-    val JITTER_CHANCE: Float = 0.01f,
+    val SIGNAL_SHIFT: Float = 0.0f,
+    val JITTER_CHANCE: Float = 0.006f,
     val JITTER_INTENSITY: Float = 45.0f,
-    val GLOBAL_JITTER_CHANCE: Float = 0.005f,
+    val GLOBAL_JITTER_CHANCE: Float = 0.004f,
     val GLOBAL_JITTER_STRENGTH: Float = 25.0f
 )
 
