@@ -1,0 +1,190 @@
+uniform shader composable;
+uniform float2 resolution;
+uniform float2 contentSize;
+uniform float time;
+uniform float2 explosionCenter;
+uniform float explosionProgress;
+uniform float interactionPhase;
+
+// ==========================================
+// TWEAKING CONSOLE
+// ==========================================
+const float GRID_DENSITY      = 120.0;
+const float SHADOW_INTENSITY  = 0.8;
+
+const float WAVE_SPEED        = 2.0;
+const float EXPLOSION_POWER   = 1.0;
+const float EXPLOSION_INERTIA = 0.8;
+const float ROTATION_SPEED    = 1.5;
+const float EXPLOSION_DELAY   = 0.30;
+
+const float RIPPLE_WIDTH      = 0.05;
+const float RIPPLE_STRENGTH   = 0.10;
+const float TRAVEL_DISTANCE   = 1.5;
+const float FADE_START        = 0.8;
+const float BLEND_ZONE        = 0.12;
+
+const float ROT_X             = 28.0;
+const float ROT_Y             = 32.0;
+const float ROT_Z             = 15.0;
+
+// --- SHINE & ENVIRONNEMENT CONSOLE ---
+const float CHROMATIC_STRENGTH = 0.035;
+const float FLASH_STRENGTH     = 0.80;
+const float FLASH_SPEED        = 6.0;
+
+const float HEAT_HAZE_STRENGTH = 0.90; // Tremblement de l'air
+const float SHOCK_DISTORTION   = 0.04;  // Effet de souffle (fisheye)
+const float SPARKLE_BRIGHTNESS = 0.85;   // Intensité des micro-poussières
+// ==========================================
+
+float2 hash22(float2 p) {
+    p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
+    return fract(sin(p) * 43758.5453);
+}
+
+half4 main(float2 fragCoord) {
+    float p = explosionProgress;
+
+    // ------------------------------------------
+    // HORLOGES INDEPENDANTES
+    // ------------------------------------------
+    float tWave = p * WAVE_SPEED;
+    float tExplode = pow(max(0.0, p - EXPLOSION_DELAY), EXPLOSION_INERTIA) * EXPLOSION_POWER;
+    float tFade = smoothstep(FADE_START, 1.0, p);
+    float tFlash = max(0.0, 1.0 - (p * FLASH_SPEED)) * FLASH_STRENGTH;
+
+    // ------------------------------------------
+    // SETUP COORDONNÉES
+    // ------------------------------------------
+    float2 uv = fragCoord / resolution;
+    float aspect = resolution.x / resolution.y;
+    float2 ratio = float2(aspect, 1.0);
+    float2 uvRatio = uv * ratio;
+    float2 clickUV = (explosionCenter / resolution) * ratio;
+
+    float2 margin = (resolution - contentSize) / 2.0;
+    float2 contentStart = margin / resolution;
+    float2 contentEnd = (margin + contentSize) / resolution;
+
+    if (interactionPhase < 1.5) {
+        if (uv.x < contentStart.x || uv.x > contentEnd.x || uv.y < contentStart.y || uv.y > contentEnd.y) return half4(0.0);
+        return composable.eval(fragCoord);
+    }
+
+    float2 dir = uvRatio - clickUV;
+    float distToClick = length(dir);
+    float2 normDir = normalize(dir + 0.0001);
+
+    // ------------------------------------------
+    // EFFET 1 & 2 : SOUFFLE ET CHALEUR
+    // ------------------------------------------
+    // Le souffle pousse l'image vers l'extérieur
+    float shock = smoothstep(tWave + 0.2, tWave, distToClick) * SHOCK_DISTORTION * (1.0 - p);
+    float2 envUV = uv - (normDir * shock / ratio);
+
+    // La chaleur fait trembler l'image derrière l'onde
+    float haze = sin(uv.y * 80.0 + time * 15.0) * hash22(uv + time).x * HEAT_HAZE_STRENGTH;
+    float hazeMask = smoothstep(tWave, tWave - 0.2, distToClick);
+    envUV += haze * hazeMask;
+
+    // --- TRANSITION ONDE / EXPLOSION ---
+    float mixFactor = smoothstep(tWave - BLEND_ZONE, tWave, distToClick);
+    mixFactor = 1.0 - mixFactor;
+
+    // ------------------------------------------
+    // ÉTAPE A : L'ONDE
+    // ------------------------------------------
+    float rippleShape = sin((distToClick - tWave) * 40.0) * 0.5 + 0.5;
+    float rippleMask = smoothstep(tWave - RIPPLE_WIDTH, tWave, distToClick) * smoothstep(tWave + RIPPLE_WIDTH, tWave, distToClick);
+    float2 rippleOffset = normDir * rippleShape * rippleMask * RIPPLE_STRENGTH;
+
+    float2 distortedUV = envUV - (rippleOffset / ratio);
+    half4 waveColor = half4(0.0);
+    if (!(distortedUV.x < contentStart.x || distortedUV.x > contentEnd.x || distortedUV.y < contentStart.y || distortedUV.y > contentEnd.y)) {
+        waveColor = composable.eval(distortedUV * resolution);
+        waveColor.rgb += rippleMask * 0.15;
+    }
+    waveColor.rgb += tFlash;
+
+    if (mixFactor <= 0.0) return waveColor;
+
+    // ------------------------------------------
+    // ÉTAPE B : L'EXPLOSION
+    // ------------------------------------------
+    float chromShift = CHROMATIC_STRENGTH * mixFactor * (0.6 + tExplode * 0.4);
+    float travelScale = tExplode * TRAVEL_DISTANCE;
+    float2 searchUV = uv - (normDir * travelScale / ratio);
+
+    // Voronoi Principal
+    float2 uvScan = searchUV * float2(GRID_DENSITY * aspect, GRID_DENSITY);
+    float2 gv = floor(uvScan);
+    float minDist = 100.0;
+    float2 fragmentID = float2(0.0);
+    float2 centerUV = float2(0.0);
+
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            float2 neighbor = float2(float(x), float(y));
+            float2 h = hash22(gv + neighbor);
+            float d = length(neighbor + h - fract(uvScan));
+            if (d < minDist) {
+                minDist = d;
+                fragmentID = gv + neighbor;
+                centerUV = (gv + neighbor + h) / float2(GRID_DENSITY * aspect, GRID_DENSITY);
+            }
+        }
+    }
+
+    // --- EFFET 3 : SPARKLES (Micro-débris) ---
+    float2 sparkleScan = searchUV * float2(GRID_DENSITY * 3.0 * aspect, GRID_DENSITY * 3.0);
+    float2 sID = floor(sparkleScan);
+    float2 sRand = hash22(sID);
+    float sparkle = 0.0;
+    if (sRand.x > 0.97) {
+        float sDist = length(fract(sparkleScan) - sRand);
+        float sSpeed = (1.2 + sRand.y * 2.5);
+        // On vérifie si ce sparkle appartient à la zone de l'explosion
+        sparkle = smoothstep(0.15, 0.0, sDist) * SPARKLE_BRIGHTNESS * (1.0 - tFade);
+    }
+
+    // Logique Fragments Stable
+    float2 fragRand = hash22(fragmentID);
+    float2 fragDir = (centerUV * ratio) - clickUV;
+    float individualSpeed = (0.8 + fragRand.x * 0.4);
+    float currentDist = tExplode * individualSpeed * TRAVEL_DISTANCE;
+    float2 currentCenter = centerUV + (normalize(fragDir + 0.0001) * currentDist / ratio);
+
+    float tRot = tExplode * ROTATION_SPEED;
+    float skewX = 0.1 + 0.9 * abs(cos(tRot * ROT_X + fragRand.x * 6.28));
+    float skewY = 0.1 + 0.9 * abs(cos(tRot * ROT_Y + fragRand.y * 6.28));
+    float angleZ = tRot * ROT_Z * (fragRand.y - 0.5);
+
+    float2 relativePos = uv - currentCenter;
+    relativePos.x /= skewX;
+    relativePos.y /= skewY;
+    float s = sin(angleZ), c = cos(angleZ);
+    float2 rotatedPos = float2x2(c, -s, s, c) * relativePos;
+    float2 sourceUV = centerUV + rotatedPos;
+
+    half4 explodeColor = half4(0.0);
+    if (!(sourceUV.x < contentStart.x || sourceUV.x > contentEnd.x || sourceUV.y < contentStart.y || sourceUV.y > contentEnd.y)) {
+        float2 finalScan = sourceUV * float2(GRID_DENSITY * aspect, GRID_DENSITY);
+        if (length(floor(finalScan + 0.5) - fragmentID) < 1.2) {
+            explodeColor.r = composable.eval((sourceUV + float2(chromShift, 0.0)) * resolution).r;
+            explodeColor.g = composable.eval(sourceUV * resolution).g;
+            explodeColor.b = composable.eval((sourceUV - float2(chromShift, 0.0)) * resolution).b;
+            explodeColor.a = 1.0;
+
+            explodeColor.rgb *= (0.4 + 0.6 * skewX * skewY);
+            explodeColor.rgb *= (1.0 - (1.0 - smoothstep(0.0, 0.15, minDist)) * SHADOW_INTENSITY);
+            explodeColor.rgb += tFlash * 0.5;
+            explodeColor *= (1.0 - tFade);
+        }
+    }
+
+    half4 finalColor = mix(waveColor, explodeColor, mixFactor);
+    finalColor.rgb += sparkle * mixFactor; // Ajout des poussières par dessus
+
+    return finalColor;
+}
