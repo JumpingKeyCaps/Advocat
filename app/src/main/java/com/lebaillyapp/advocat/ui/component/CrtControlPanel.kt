@@ -79,15 +79,26 @@ fun CrtControlPanel(
                     }
                 }
                 item {
-                    SettingSlider("Scanlines Opacity", settings.SCANLINE_OPACITY, 0f..0.5f) {
-                        onSettingsChange(settings.copy(SCANLINE_OPACITY = it))
-                    }
-                }
-                item {
                     SettingSlider("Grid Opacity", settings.GRID_OPACITY, 0f..0.5f) {
                         onSettingsChange(settings.copy(GRID_OPACITY = it))
                     }
                 }
+                item {
+                    SettingSlider("Grid Spacing", settings.GRID_SPACING, 0f..200f) {
+                        onSettingsChange(settings.copy(GRID_SPACING = it))
+                    }
+                }
+                item {
+                    SettingSlider("Scanlines Density", settings.SCANLINE_DENSITY, 0f..1f) {
+                        onSettingsChange(settings.copy(SCANLINE_DENSITY = it))
+                    }
+                }
+                item {
+                    SettingSlider("Scanlines Opacity", settings.SCANLINE_OPACITY, 0f..0.5f) {
+                        onSettingsChange(settings.copy(SCANLINE_OPACITY = it))
+                    }
+                }
+
 
                 item { SectionTitle("SIGNAL & GLITCH") }
                 item {
@@ -113,6 +124,12 @@ fun CrtControlPanel(
                 item {
                     SettingSlider("Anaglyph Text", settings.TEXT_ANAGLYPH, 0f..20f) {
                         onSettingsChange(settings.copy(TEXT_ANAGLYPH = it))
+                    }
+                }
+                item {
+                    SettingSlider("Anaglyph Grid", settings.GRID_ANAGLYPH,
+                        0f..20f) {
+                        onSettingsChange(settings.copy(GRID_ANAGLYPH = it))
                     }
                 }
 
