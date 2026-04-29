@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.lebaillyapp.advocat.model.CrtSettings
 import com.lebaillyapp.advocat.prototype.draggeur.Playground
 import com.lebaillyapp.advocat.prototype.draggeur.PlaygroundLocked
 import com.lebaillyapp.advocat.prototype.exploder.ExplodableScreen
@@ -50,6 +51,13 @@ class MainActivity : ComponentActivity() {
                     ShaderLoveLayout(
                         activateCRT = true,
                         activateLCD = false,
+                        settingsCRT = CrtSettings(
+                            FISH_EYE_STRENGTH = 0.158f,
+                            SCREEN_ZOOM = 1.130f,
+                            VIGNETTE_INTENSITY = 0.119f,
+                            SCANLINE_OPACITY = 0.012f,
+                            TEXT_ANAGLYPH = 0.0f
+                        ),
                         content = {
                             //content to shaderizZ (CRT + LCD)
                         PlaygroundLocked(modifier = Modifier.padding(innerPadding))
