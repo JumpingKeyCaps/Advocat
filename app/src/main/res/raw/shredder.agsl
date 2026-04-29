@@ -1,0 +1,38 @@
+uniform float2 uResolution;
+uniform float uProgress;
+uniform float uTime;
+
+half4 main(float2 fragCoord) {
+    // La ligne de coupe est fixée au centre exact
+    float lineY = uResolution.y * 0.5;
+
+    // Configuration de la feuille
+    float sheetW = uResolution.x * 0.6;
+    float sheetH = uResolution.y * 0.4;
+    float sheetX = (uResolution.x - sheetW) * 0.5;
+
+    // Animation de la descente : la feuille descend mais disparaît dès qu'elle touche lineY
+    // On commence légèrement au-dessus pour l'effet d'entrée
+    float sheetY = mix(lineY - sheetH - 50.0, uResolution.y, uProgress);
+    float sheetBottom = sheetY + sheetH;
+
+    // --- 1. RENDU DE LA FEUILLE ---
+    // Condition stricte : y doit être inférieur ou égal à lineY
+    if (fragCoord.x >= sheetX && fragCoord.x <= sheetX + sheetW &&
+        fragCoord.y >= sheetY && fragCoord.y <= lineY && fragCoord.y <= sheetBottom) {
+
+        // Un léger dégradé ou une couleur papier propre
+        return half4(0.95, 0.95, 0.95, 1.0);
+    }
+
+    // --- 2. LIGNE ROUGE (Le Laser) ---
+    // Elle marque la zone de "désintégration"
+    if (abs(fragCoord.y - lineY) < 1.5) {
+        // On peut ajouter un petit scintillement au laser avec uTime si tu veux
+        float pulse = 0.8 + 0.2 * sin(uTime * 10.0);
+        return half4(1.0, 0.0, 0.0, pulse);
+    }
+
+    // Tout le reste est vide
+    return half4(0.0);
+}
