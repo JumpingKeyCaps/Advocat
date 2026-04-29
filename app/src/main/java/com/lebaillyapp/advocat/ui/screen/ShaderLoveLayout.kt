@@ -56,6 +56,8 @@ fun ShaderLoveLayout(
     modifier: Modifier = Modifier,
     activateCRT: Boolean = true,
     activateLCD: Boolean = true,
+    settingsCRT: CrtSettings = CrtSettings(),
+    settingsLCD: LcdSettings = LcdSettings(),
     content: @Composable () -> Unit
 ) {
     val resources = LocalResources.current
@@ -65,8 +67,8 @@ fun ShaderLoveLayout(
     val masterFontFamily = FontFamily(Font(R.font.bokor, FontWeight.Normal))
 
     // --- ÉTATS DES RÉGLAGES ---
-    var crtSettings by remember { mutableStateOf(CrtSettings()) }
-    var lcdSettings by remember { mutableStateOf(LcdSettings()) }
+    var crtSettings by remember { mutableStateOf(settingsCRT) }
+    var lcdSettings by remember { mutableStateOf(settingsLCD) }
 
     var showCrtMenu by remember { mutableStateOf(false) }
     var showLcdMenu by remember { mutableStateOf(false) }
