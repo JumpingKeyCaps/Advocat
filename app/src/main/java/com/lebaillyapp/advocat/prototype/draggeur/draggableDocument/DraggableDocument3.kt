@@ -1,4 +1,4 @@
-package com.lebaillyapp.advocat.prototype.draggeur
+package com.lebaillyapp.advocat.prototype.draggeur.draggableDocument
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -19,10 +19,10 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.zIndex
+import com.lebaillyapp.advocat.prototype.draggeur.DocumentState
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -69,7 +69,7 @@ import kotlin.math.sin
  *
  * ## Paramètres
  *
- * @param state          L'état physique et logique du document ([DocumentState]).
+ * @param state          L'état physique et logique du document ([com.lebaillyapp.advocat.prototype.draggeur.DocumentState]).
  * @param globalScale    Le facteur de zoom global de la caméra du playground,
  *                       utilisé pour corriger la magnitude du pan.
  * @param onPointerDown  Callback déclenché au premier contact, typiquement utilisé

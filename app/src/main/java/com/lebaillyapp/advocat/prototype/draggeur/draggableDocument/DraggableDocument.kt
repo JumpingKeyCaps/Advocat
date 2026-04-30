@@ -1,4 +1,4 @@
-package com.lebaillyapp.advocat.prototype.draggeur
+package com.lebaillyapp.advocat.prototype.draggeur.draggableDocument
 
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
+import com.lebaillyapp.advocat.prototype.draggeur.DocumentState
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -22,7 +23,7 @@ fun DraggableDocument(
     onPointerDown: () -> Unit,
     content: @Composable () -> Unit,
 
-) {
+    ) {
     val scope = rememberCoroutineScope()
 
     Box(
