@@ -55,7 +55,7 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
             }
     ) {
         playgroundState.documents.forEach { docState ->
-            DraggableDocument2(
+            DraggableDocument3(
                 state = docState,
                 globalScale = playgroundState.globalScale.value,
                 onPointerDown = { playgroundState.bringToFront(docState) },
@@ -68,6 +68,7 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
+                    //contenue de la sheet
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = "Sample",
