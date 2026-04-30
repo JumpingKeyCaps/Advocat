@@ -2,8 +2,14 @@ package com.lebaillyapp.advocat.prototype.draggeur
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,13 +73,47 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
                     shadowElevation = 2.dp
                 ) {
                     //contenue de la sheet
-                    Box(contentAlignment = Alignment.Center) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        // En-tête "Officiel"
                         Text(
-                            text = "Sample",
-                            fontFamily = FontFamily(Font(R.font.special_elite, FontWeight.Normal)),
-                            color = Color.Gray,
-                            fontSize = 9.sp
+                            text = "Sample document",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.LightGray))
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Corps du document (C'est ce texte dense qui va "baver" avec le flou)
+                        repeat(8) { index ->
+                            Text(
+                                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+                                        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                                fontSize = 7.sp,
+                                lineHeight = 10.sp,
+                                color = if (index % 5 == 0) Color.DarkGray else Color.Gray,
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        // Petit tampon ou signature en bas
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.End)
+                                .background(Color(0xFFFFEBEE), shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("APPROVED", fontSize = 6.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
