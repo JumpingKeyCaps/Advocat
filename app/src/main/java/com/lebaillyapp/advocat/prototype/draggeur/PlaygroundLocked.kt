@@ -55,7 +55,7 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
             }
     ) {
         playgroundState.documents.forEach { docState ->
-            DraggableDocument3(
+            DraggableDocument4(
                 state = docState,
                 globalScale = playgroundState.globalScale.value,
                 onPointerDown = { playgroundState.bringToFront(docState) },

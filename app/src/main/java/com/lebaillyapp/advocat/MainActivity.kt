@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
                     //todo - Generic shader layout content loader
 
                     ShaderLoveLayout(
-                        activateCRT = true,
+                        activateCRT = false,
                         activateLCD = false,
                         settingsCRT = CrtSettings(
                             FISH_EYE_STRENGTH = 0.158f,
