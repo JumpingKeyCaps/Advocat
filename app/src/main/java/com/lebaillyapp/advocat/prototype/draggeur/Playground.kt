@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lebaillyapp.advocat.R
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument
 import kotlinx.coroutines.launch
 
 @Composable
@@ -94,7 +95,12 @@ fun Playground(modifier: Modifier = Modifier) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "Sample",
-                                fontFamily = FontFamily(Font(R.font.special_elite, FontWeight.Normal)),
+                                fontFamily = FontFamily(
+                                    Font(
+                                        R.font.special_elite,
+                                        FontWeight.Normal
+                                    )
+                                ),
                                 color = Color.Gray,
                                 fontSize = 9.sp
                             )

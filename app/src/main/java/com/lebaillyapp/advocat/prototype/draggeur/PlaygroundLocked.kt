@@ -1,12 +1,10 @@
 package com.lebaillyapp.advocat.prototype.draggeur
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,14 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lebaillyapp.advocat.R
-import kotlinx.coroutines.launch
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument4
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument5
 
 @Composable
 fun PlaygroundLocked(modifier: Modifier = Modifier) {
@@ -55,7 +53,7 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
             }
     ) {
         playgroundState.documents.forEach { docState ->
-            DraggableDocument4(
+            DraggableDocument5(
                 state = docState,
                 globalScale = playgroundState.globalScale.value,
                 onPointerDown = { playgroundState.bringToFront(docState) },
