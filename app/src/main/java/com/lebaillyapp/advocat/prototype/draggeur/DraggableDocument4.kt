@@ -3,6 +3,7 @@ package com.lebaillyapp.advocat.prototype.draggeur
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -51,20 +52,21 @@ fun DraggableDocument4(
     var parentSize by remember { mutableStateOf(IntSize.Zero) }
 
     // --- ÉTATS PHYSIQUES SUPPLÉMENTAIRES ---
-    val lift = remember { Animatable(0f) } // 0f = au repos, 1f = soulevé
-    val tilt = remember { Animatable(0f) } // Inclinaison basée sur le mouvement X
+    val lift = remember { Animatable(0f) }
+    // On utilise désormais un Offset pour gérer le tilt sur deux axes
+    val tilt = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
 
     // --- Out of bound gestion
     val maxMagneticOverflowMargin = 0.05f
     val recoverMagneticSpeed = 3000
 
     // --- inner effect
-    val maxTilt = 15f //15 degree
-    val tiltNervosity = 50f // 50f originaly (more is less)
-    val ratioLiftScaling = 0.05f // 5% de scaling up
-    val minElevationLift = 2f // 2.dp au sol
-    val maxElevationLift = 5f // 10.dp au en l'air
-
+    val maxLateralTilt = 15f
+    val maxVerticalTilt = 5f
+    val tiltNervosity = 50f
+    val ratioLiftScaling = 0.05f
+    val minElevationLift = 2f
+    val maxElevationLift = 5f
 
     Box(
         modifier = Modifier
@@ -80,19 +82,18 @@ fun DraggableDocument4(
                 )
             }
             .graphicsLayer {
-                // 1. GESTION DU LIFT (Scale + Ombre)
-                // Quand on soulève (lift=1), on ajoute X% de scale en plus du scale auto
                 val liftScale = 1f + (lift.value * ratioLiftScaling)
                 scaleX = state.scale.value * liftScale
                 scaleY = state.scale.value * liftScale
 
-                // 2. GESTION DU TILT (Inclinaison Y)
-                // On fait pivoter la feuille sur l'axe vertical selon la vitesse du drag
-                rotationY = tilt.value * maxTilt // Max  degrés d'inclinaison
+                // --- DUAL AXIS TILT ---
+                // panX incline sur l'axe Y (rotationY)
+                // panY incline sur l'axe X (rotationX) -> On inverse le signe pour un feeling naturel
+                rotationY = tilt.value.x * maxLateralTilt
+                rotationX = -tilt.value.y * maxVerticalTilt
 
                 rotationZ = state.rotation.value
 
-                // 3. ÉLÉVATION (Ombre dynamique)
                 shadowElevation = (minElevationLift.dp.toPx() + (lift.value * maxElevationLift.dp.toPx()))
                 shape = RoundedCornerShape(4.dp)
                 clip = true
@@ -104,7 +105,6 @@ fun DraggableDocument4(
                     awaitFirstDown()
                     onPointerDown()
 
-                    // AU TOUCHER : On lève la feuille et on stoppe les anims
                     scope.launch {
                         state.offset.stop()
                         lift.animateTo(1f, spring(stiffness = Spring.StiffnessLow))
@@ -117,11 +117,14 @@ fun DraggableDocument4(
 
                         if (panChange != Offset.Zero || rotationChange != 0f) {
                             scope.launch {
-                                // --- TILT EFFECT ---
-                                // On incline selon la direction et force du pan X
-                                val tiltTarget = (panChange.x / tiltNervosity).coerceIn(-1f, 1f)
+                                // --- TILT EFFECT (X et Y) ---
+                                val tiltTargetX = (panChange.x / tiltNervosity).coerceIn(-1f, 1f)
+                                val tiltTargetY = (panChange.y / tiltNervosity).coerceIn(-1f, 1f)
                                 launch {
-                                    tilt.animateTo(tiltTarget, spring(stiffness = Spring.StiffnessMedium))
+                                    tilt.animateTo(
+                                        Offset(tiltTargetX, tiltTargetY),
+                                        spring(stiffness = Spring.StiffnessMedium)
+                                    )
                                 }
 
                                 // --- COMPENSATION ROTATION ---
@@ -148,17 +151,17 @@ fun DraggableDocument4(
                             }
                             event.changes.forEach { it.consume() }
                         } else {
-                            // Si le doigt ne bouge plus, on remet le tilt à zéro doucement
-                            scope.launch { tilt.animateTo(0f, spring(stiffness = Spring.StiffnessLow)) }
+                            // Reset du tilt quand le mouvement s'arrête
+                            scope.launch { tilt.animateTo(Offset.Zero, spring(stiffness = Spring.StiffnessLow)) }
                         }
                     } while (event.changes.any { it.pressed })
 
                     // --- RELÂCHEMENT ---
                     scope.launch {
-                        // On repose la feuille et on remet le tilt à plat
                         launch { lift.animateTo(0f, spring(stiffness = Spring.StiffnessLow)) }
-                        launch { tilt.animateTo(0f, spring(stiffness = Spring.StiffnessLow)) }
+                        launch { tilt.animateTo(Offset.Zero, spring(stiffness = Spring.StiffnessLow)) }
 
+                        // ... (Reste de ta logique de magnétisme inchangée)
                         val scale = state.scale.value
                         val currentOffset = state.offset.value
                         val scaledWidth = docSize.width * scale
