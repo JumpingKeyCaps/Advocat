@@ -60,8 +60,8 @@ import kotlin.math.sin
  *
  * ```
  * val angleRad = Math.toRadians(state.rotation.value.toDouble())
- * correctedX  =  pan.x * cos(θ) + pan.y * sin(θ)
- * correctedY  = -pan.x * sin(θ) + pan.y * cos(θ)
+ * correctedX  =  pan.x * cos(θ) - pan.y * sin(θ)
+ * correctedY  = pan.x * sin(θ) + pan.y * cos(θ)
  * ```
  *
  * Cette transformation ramène le vecteur de pan dans l'espace monde quel que
