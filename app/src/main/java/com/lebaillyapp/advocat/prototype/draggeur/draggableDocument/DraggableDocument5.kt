@@ -65,6 +65,8 @@ fun DraggableDocument5(
     val ratioLiftScaling = 0.05f
     val minElevationLift = 2f
     val maxElevationLift = 5f
+    val motionBlurForce = 25f // less is strong
+    val motionBlurHeat = 24f //rayon max du flou - more is blury
 
     Box(
         modifier = Modifier
@@ -128,7 +130,7 @@ fun DraggableDocument5(
 
                                 // BLUR basé sur la vitesse
                                 val speed = panChange.getDistance()
-                                launch { motionBlurIntensity.animateTo((speed / 20f).coerceAtMost(4f)) }
+                                launch { motionBlurIntensity.animateTo((speed / motionBlurForce).coerceAtMost(motionBlurHeat)) }
 
                                 launch {
                                     tilt.animateTo(
