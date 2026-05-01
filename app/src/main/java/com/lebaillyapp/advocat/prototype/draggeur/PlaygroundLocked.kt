@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.lebaillyapp.advocat.R
 import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument4
 import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument5
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument6
 
 @Composable
 fun PlaygroundLocked(modifier: Modifier = Modifier) {
@@ -59,7 +60,7 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
             }
     ) {
         playgroundState.documents.forEach { docState ->
-            DraggableDocument5(
+            DraggableDocument6(
                 state = docState,
                 globalScale = playgroundState.globalScale.value,
                 onPointerDown = { playgroundState.bringToFront(docState) },
