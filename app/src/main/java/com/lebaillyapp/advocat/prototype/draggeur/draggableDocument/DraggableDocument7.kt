@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -80,6 +81,10 @@ fun DraggableDocument7(
     // Plus la valeur est haute, plus la feuille freine vite.
     // 1.5f ≈ glissement naturel papier sur table légèrement rugueuse.
     // Tweakable sans toucher au reste de la mécanique.
+    //
+    // Fix V7.1 : remplacement du while+yield (busy loop → 99% CPU → ANR)
+    // par withFrameNanos qui suspend jusqu'au prochain VSync Choreographer.
+    // Zéro saturation CPU, sync parfaite à 60/120fps.
     // -------------------------------------------------------------------------
     val flingFriction = 1.5f
 
@@ -268,15 +273,11 @@ fun DraggableDocument7(
                             launch { motionBlurIntensity.animateTo(0f) }
 
                             // -------------------------------------------------
-                            // V7 ÉTAPE 1 : FLING
+                            // V7.1 ÉTAPE 1 : FLING
                             //
-                            // Deux Animatable<Float> intermédiaires pour X et Y.
-                            // exponentialDecay ne fonctionnant que sur Float,
-                            // on anime chaque axe indépendamment et on synchronise
-                            // state.offset via snapTo à chaque frame.
-                            //
-                            // Les deux decay tournent en parallèle (launch + join),
-                            // state.offset est mis à jour à chaque step des deux.
+                            // Fix ANR : remplacement de while+yield (busy loop)
+                            // par withFrameNanos — suspend jusqu'au prochain VSync,
+                            // zéro saturation CPU, 60/120fps garanti.
                             // -------------------------------------------------
                             val flingAnimX = Animatable(state.offset.value.x)
                             val flingAnimY = Animatable(state.offset.value.y)
@@ -296,21 +297,24 @@ fun DraggableDocument7(
                                 )
                             }
 
-                            // Sync offset pendant que les deux decay tournent
-                            launch {
+                            // Coroutine de sync calée sur le VSync Choreographer
+                            // withFrameNanos suspend jusqu'à la prochaine frame —
+                            // pas de busy loop, pas de saturation CPU
+                            val jobSync = launch {
                                 while (jobX.isActive || jobY.isActive) {
-                                    state.offset.snapTo(Offset(flingAnimX.value, flingAnimY.value))
-                                    // Yield pour ne pas bloquer le thread
-                                    kotlinx.coroutines.yield()
+                                    withFrameNanos { }
+                                    state.offset.snapTo(
+                                        Offset(flingAnimX.value, flingAnimY.value)
+                                    )
                                 }
                             }
 
-                            // On attend la fin des deux axes avant magnétisme
                             jobX.join()
                             jobY.join()
+                            jobSync.join()
 
                             // -------------------------------------------------
-                            // V7 ÉTAPE 2 : MAGNÉTISME — code V6 strictement inchangé
+                            // V7.1 ÉTAPE 2 : MAGNÉTISME — code V6 strictement inchangé
                             // Déclenché uniquement après la fin complète du fling
                             // -------------------------------------------------
                             val scale = state.scale.value
