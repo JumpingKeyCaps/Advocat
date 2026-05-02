@@ -1,5 +1,6 @@
 package com.lebaillyapp.advocat.prototype.draggeur
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -31,19 +34,46 @@ import com.lebaillyapp.advocat.R
 import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument4
 import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument5
 import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument6
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument7
+import com.lebaillyapp.advocat.prototype.draggeur.draggableDocument.DraggableDocument8
 
 @Composable
 fun PlaygroundLocked(modifier: Modifier = Modifier) {
     val playgroundState = remember { PlaygroundState() }
     val scope = rememberCoroutineScope()
 
+
+
+
+    // Liste simple des ressources générées
+    val evidenceImages = remember {
+        listOf(
+            R.drawable.vh_1,
+            R.drawable.vh_2,
+            R.drawable.vh_3,
+            R.drawable.vh_4,
+            R.drawable.vh_5,
+            R.drawable.vh_6,
+            R.drawable.vh_7,
+            R.drawable.vh_8
+        )
+    }
+
+
+
+
+
     LaunchedEffect(Unit) {
         if (playgroundState.documents.isEmpty()) {
-            playgroundState.addDocument(offset = Offset(50f, 100f))
-            playgroundState.addDocument(offset = Offset(50f, 100f), rotation = 15f)
-            playgroundState.addDocument(offset = Offset(50f, 100f), rotation = -10f)
-            playgroundState.addDocument(offset = Offset(50f, 100f), rotation = 5f)
-            playgroundState.addDocument(offset = Offset(50f, 100f), rotation = -6f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f))
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = 3f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = -4f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = 1f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = -3f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = 2f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = 4f)
+            playgroundState.addDocument(offset = Offset(350f, 1000f), rotation = -5f)
+
         }
     }
 
@@ -59,8 +89,8 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
                 scaleY = playgroundState.globalScale.value
             }
     ) {
-        playgroundState.documents.forEach { docState ->
-            DraggableDocument6(
+        playgroundState.documents.forEachIndexed { index, docState ->
+            DraggableDocument8(
                 state = docState,
                 globalScale = playgroundState.globalScale.value,
                 onPointerDown = { playgroundState.bringToFront(docState) },
@@ -73,49 +103,12 @@ fun PlaygroundLocked(modifier: Modifier = Modifier) {
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
-                    //contenue de la sheet
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        // En-tête "Officiel"
-                        Text(
-                            text = "Sample document",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color.LightGray))
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Corps du document (C'est ce texte dense qui va "baver" avec le flou)
-                        repeat(8) { index ->
-                            Text(
-                                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-                                        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                                fontSize = 7.sp,
-                                lineHeight = 10.sp,
-                                color = if (index % 5 == 0) Color.DarkGray else Color.Gray,
-                                modifier = Modifier.padding(bottom = 6.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // Petit tampon ou signature en bas
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .align(Alignment.End)
-                                .background(Color(0xFFFFEBEE), shape = CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("APPROVED", fontSize = 6.sp, color = Color.Red, fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    Image(
+                        painter = painterResource(id = evidenceImages[index % evidenceImages.size]),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
             }
         }
