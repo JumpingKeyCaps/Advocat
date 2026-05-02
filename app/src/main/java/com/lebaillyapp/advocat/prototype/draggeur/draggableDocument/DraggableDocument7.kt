@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.lebaillyapp.advocat.prototype.draggeur.DocumentState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -66,26 +67,23 @@ fun DraggableDocument7(
     val tilt = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
     val motionBlurIntensity = remember { Animatable(0f) }
 
-    // Configuration — identique V6
+    // -------------------------------------------------------------------------
+    // V7.2 — TRACKING DU JOB FLING
+    //
+    // flingJob mémorise le job racine du bloc fling+magnétisme.
+    // Au pointerDown, on le cancel avant tout — ce qui cascade automatiquement
+    // sur jobX, jobY, jobSync (enfants du même scope), stoppant la boucle
+    // withFrameNanos et libérant state.offset pour le nouveau drag.
+    // -------------------------------------------------------------------------
+    val flingJob = remember { mutableStateOf<Job?>(null) }
+
+    // Configuration
     val maxMagneticOverflowMargin = 0.05f
     val recoverMagneticSpeed = 3000
     val maxLateralTilt = 15f
     val maxVerticalTilt = 5f
     val tiltNervosity = 50f
     val ratioLiftScaling = 0.05f
-
-    // -------------------------------------------------------------------------
-    // V7 — INERTIE / FLING
-    //
-    // Paramètre de friction pour exponentialDecay.
-    // Plus la valeur est haute, plus la feuille freine vite.
-    // 1.5f ≈ glissement naturel papier sur table légèrement rugueuse.
-    // Tweakable sans toucher au reste de la mécanique.
-    //
-    // Fix V7.1 : remplacement du while+yield (busy loop → 99% CPU → ANR)
-    // par withFrameNanos qui suspend jusqu'au prochain VSync Choreographer.
-    // Zéro saturation CPU, sync parfaite à 60/120fps.
-    // -------------------------------------------------------------------------
     val flingFriction = 1.5f
 
     // Cache ombre ambiante — identique V6
@@ -172,13 +170,15 @@ fun DraggableDocument7(
 
                         view.performHapticFeedback(android.view.HapticFeedbackConstants.GESTURE_START)
 
-                        // ---------------------------------------------------------
-                        // V7 : VelocityTracker — réinitialisé à chaque geste
-                        // car instancié dans le scope de awaitEachGesture
-                        // ---------------------------------------------------------
                         val velocityTracker = VelocityTracker()
 
                         scope.launch {
+                            // ---------------------------------------------------------
+                            // V7.2 : cancel du fling en cours AVANT state.offset.stop()
+                            // jobX, jobY, jobSync sont enfants du flingJob — ils sont
+                            // tous annulés en cascade, libérant state.offset proprement.
+                            // ---------------------------------------------------------
+                            flingJob.value?.cancel()
                             state.offset.stop()
                             lift.animateTo(
                                 1f,
@@ -194,10 +194,6 @@ fun DraggableDocument7(
                             val panChange = event.calculatePan()
                             val rotationChange = event.calculateRotation()
 
-                            // ---------------------------------------------------------
-                            // V7 : alimentation VelocityTracker sur le premier pointeur
-                            // actif — stable en mono et multi-touch
-                            // ---------------------------------------------------------
                             event.changes.firstOrNull()?.let { change: PointerInputChange ->
                                 velocityTracker.addPointerInputChange(change)
                             }
@@ -244,11 +240,6 @@ fun DraggableDocument7(
                             }
                         } while (event.changes.any { it.pressed })
 
-                        // ---------------------------------------------------------
-                        // V7 : récupération vélocité au lâcher
-                        // Correction rotation + globalScale — même logique que
-                        // correctedPan pendant le drag
-                        // ---------------------------------------------------------
                         val rawVelocity = velocityTracker.calculateVelocity()
                         val angleRadAtRelease = Math.toRadians(state.rotation.value.toDouble())
                         val cosR = cos(angleRadAtRelease).toFloat()
@@ -256,10 +247,13 @@ fun DraggableDocument7(
                         val velocityX = (rawVelocity.x * cosR - rawVelocity.y * sinR) / globalScale
                         val velocityY = (rawVelocity.x * sinR + rawVelocity.y * cosR) / globalScale
 
-                        scope.launch {
+                        // ---------------------------------------------------------
+                        // V7.2 : flingJob stocké dans remember — permet au prochain
+                        // pointerDown de le cancel proprement via flingJob.value?.cancel()
+                        // ---------------------------------------------------------
+                        flingJob.value = scope.launch {
                             view.performHapticFeedback(android.view.HapticFeedbackConstants.GESTURE_END)
 
-                            // Lift / tilt / blur — identiques V6, en parallèle du fling
                             launch {
                                 lift.animateTo(
                                     0f,
@@ -272,13 +266,6 @@ fun DraggableDocument7(
                             launch { tilt.animateTo(Offset.Zero, spring(stiffness = Spring.StiffnessLow)) }
                             launch { motionBlurIntensity.animateTo(0f) }
 
-                            // -------------------------------------------------
-                            // V7.1 ÉTAPE 1 : FLING
-                            //
-                            // Fix ANR : remplacement de while+yield (busy loop)
-                            // par withFrameNanos — suspend jusqu'au prochain VSync,
-                            // zéro saturation CPU, 60/120fps garanti.
-                            // -------------------------------------------------
                             val flingAnimX = Animatable(state.offset.value.x)
                             val flingAnimY = Animatable(state.offset.value.y)
                             val decaySpec = exponentialDecay<Float>(frictionMultiplier = flingFriction)
@@ -297,15 +284,18 @@ fun DraggableDocument7(
                                 )
                             }
 
-                            // Coroutine de sync calée sur le VSync Choreographer
-                            // withFrameNanos suspend jusqu'à la prochaine frame —
-                            // pas de busy loop, pas de saturation CPU
                             val jobSync = launch {
                                 while (jobX.isActive || jobY.isActive) {
                                     withFrameNanos { }
-                                    state.offset.snapTo(
-                                        Offset(flingAnimX.value, flingAnimY.value)
-                                    )
+                                    val newOffset = Offset(flingAnimX.value, flingAnimY.value)
+                                    state.offset.snapTo(newOffset)
+
+                                    val screenH = parentSize.height.toFloat()
+                                    if (screenH > 0f) {
+                                        val threshold = screenH * 0.45f
+                                        val progress = (newOffset.y / threshold).coerceIn(0f, 1f)
+                                        state.scale.snapTo(minSize + (maxSize - minSize) * progress)
+                                    }
                                 }
                             }
 
@@ -313,10 +303,7 @@ fun DraggableDocument7(
                             jobY.join()
                             jobSync.join()
 
-                            // -------------------------------------------------
-                            // V7.1 ÉTAPE 2 : MAGNÉTISME — code V6 strictement inchangé
-                            // Déclenché uniquement après la fin complète du fling
-                            // -------------------------------------------------
+                            // Magnétisme — déclenché après fin complète du fling
                             val scale = state.scale.value
                             val currentOffset = state.offset.value
                             val scaledWidth = docSize.width * scale
