@@ -66,13 +66,10 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-
                         // Interception du bouton retour natif
                         BackHandler {
                             currentScreen = null
                         }
-
-
                         // --- L'ÉCRAN SÉLECTIONNÉ ---
                         Box(modifier = Modifier.fillMaxSize()) {
                             // On injecte le contenu selon le choix
